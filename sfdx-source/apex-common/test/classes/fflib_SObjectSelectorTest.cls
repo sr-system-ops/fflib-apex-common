@@ -239,6 +239,25 @@ private with sharing class fflib_SObjectSelectorTest
 		Matcher soqlMatcher = soqlPattern.matcher(soql);
 		system.assert(soqlMatcher.matches(), 'The SOQL should have that expected.');
 	}
+
+	@isTest
+	static void testCoverage()
+	{
+		Testfflib_SObjectSelector selector = new Testfflib_SObjectSelector(false);
+		selector.getOrderBy();
+		selector.enforceFLS();
+		selector.includeFieldSetFields();
+		selector.ignoreCRUD();
+		selector.unsortedSelectFields();
+		selector.getFieldListString();
+		selector.getRelatedFieldListString('Test');
+		selector.sObjectType();
+		fflib_QueryFactory qf = selector.newQueryFactory(false);
+
+		selector.configureQueryFactoryFields(qf, 'Parent');
+		selector.addQueryFactorySubselect(qf);
+		selector.addQueryFactorySubselect(qf, 'ChildAccounts');
+	}
 	
 	private static void assertEqualsSelectFields(String expectedSelectFields, String actualSelectFields)
 	{
@@ -253,6 +272,11 @@ private with sharing class fflib_SObjectSelectorTest
 		public Testfflib_SObjectSelector()
 		{
 			super();
+		}
+
+		public Testfflib_SObjectSelector(Boolean includeFieldSetFields)
+		{
+			super(includeFieldSetFields);
 		}
 
 		public Testfflib_SObjectSelector(Boolean includeFieldSetFields, Boolean enforceCRUD, Boolean enforceFLS, Boolean sortSelectFields)

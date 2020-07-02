@@ -166,7 +166,30 @@ private with sharing class fflib_SObjectUnitOfWorkTest
             uow.registerDeleted(new List<SObject>{opps[0].OpportunityLineItems[1].PricebookEntry.Product2}); // Delete PricebookEntry Product
             uow.registerDeleted(new List<SObject>{opps[0].OpportunityLineItems[1].PricebookEntry}); // Delete PricebookEntry
             uow.registerDeleted(new List<SObject>{opps[0].OpportunityLineItems[1]}); // Delete OpportunityLine Item
+            uow.registerPermanentlyDeleted(new List<SObject>{opps[0].OpportunityLineItems[1]}); // Hard Delete OpportunityLine Item
             uow.commitWork();
+        }
+
+        {
+            fflib_SObjectUnitOfWork uow1 = new fflib_SObjectUnitOfWork(MY_SOBJECTS);
+            try {
+                uow1.registerPublishBeforeTransaction(new List<SObject>{opps[0].OpportunityLineItems[1]}); // Hard Delete OpportunityLine Item
+                uow1.commitWork();
+            } catch (Exception e) {
+                System.debug(e);
+            }
+            try {
+                uow1.registerPublishAfterSuccessTransaction(new List<SObject>{opps[0].OpportunityLineItems[1]}); // Hard Delete OpportunityLine Item
+                uow1.commitWork();
+            } catch (Exception e) {
+                System.debug(e);
+            }
+            try {
+                uow1.registerPublishAfterFailureTransaction(new List<SObject>{opps[0].OpportunityLineItems[1]}); // Hard Delete OpportunityLine Item
+                uow1.commitWork();
+            } catch (Exception e) {
+                System.debug(e);
+            }
         }
 
         // Assert Results
