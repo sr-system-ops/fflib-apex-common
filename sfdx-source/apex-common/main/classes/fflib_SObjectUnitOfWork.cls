@@ -56,20 +56,20 @@ public virtual class fflib_SObjectUnitOfWork
 {
     protected List<Schema.SObjectType> m_sObjectTypes = new List<Schema.SObjectType>();
 
-    protected Map<String, List<SObject>> m_newListByType = new Map<String, List<SObject>>();
+    @TestVisible protected Map<String, List<SObject>> m_newListByType = new Map<String, List<SObject>>();
 
-    protected Map<String, Map<Id, SObject>> m_dirtyMapByType = new Map<String, Map<Id, SObject>>();
+    @TestVisible protected Map<String, Map<Id, SObject>> m_dirtyMapByType = new Map<String, Map<Id, SObject>>();
 
-    protected Map<String, Map<Id, SObject>> m_deletedMapByType = new Map<String, Map<Id, SObject>>();
+    @TestVisible protected Map<String, Map<Id, SObject>> m_deletedMapByType = new Map<String, Map<Id, SObject>>();
     protected Map<String, Map<Id, SObject>> m_emptyRecycleBinMapByType = new Map<String, Map<Id, SObject>>();
 
-    protected Map<String, Relationships> m_relationships = new Map<String, Relationships>();
+    @TestVisible protected Map<String, Relationships> m_relationships = new Map<String, Relationships>();
 
     protected Map<String, List<SObject>> m_publishBeforeListByType = new Map<String, List<SObject>>();
     protected Map<String, List<SObject>> m_publishAfterSuccessListByType = new Map<String, List<SObject>>();
     protected Map<String, List<SObject>> m_publishAfterFailureListByType = new Map<String, List<SObject>>();
 
-    protected List<IDoWork> m_workList = new List<IDoWork>();
+    @TestVisible protected List<IDoWork> m_workList = new List<IDoWork>();
 
     @TestVisible
     protected IEmailWork m_emailWork = new SendEmailWork();
@@ -571,6 +571,29 @@ public virtual class fflib_SObjectUnitOfWork
         }
     }
 
+    public void commitWorkCatchErrorLog()
+	{
+		try
+		{
+			commitWork();
+		}
+		catch(Exception e)
+		{
+			// insert newErrorLog(e);
+		}
+	}
+
+	public Error_Log__c newErrorLog(Exception e)
+	{
+		Error_Log__c log = new Error_Log__c(
+            Error_Message__c = e.getMessage() + '\n' + 'Line ' + e.getLineNumber() + '\n' + 'Stack Trace ' + e.getStackTraceString() + '\n' + 'Cause: ' + e.getCause(),
+            Error_Type__c = 'UnitOfWork Exception');
+		
+		if(e InstanceOf DmlException) log.Error_Message__c += '\n' + ((DmlException) e).getDmlId(0) + '\n' + ((DmlException) e).getDmlFieldNames(0);
+
+		return log;
+	}
+
     /**
      * Takes all the work that has been registered with the UnitOfWork and commits it to the database
      **/
@@ -585,7 +608,8 @@ public virtual class fflib_SObjectUnitOfWork
 		}
 		catch (Exception e)
 		{
-			Database.rollback(sp);
+            Database.rollback(sp);
+            insert newErrorLog(e);
 			throw e;
 		}
 		finally

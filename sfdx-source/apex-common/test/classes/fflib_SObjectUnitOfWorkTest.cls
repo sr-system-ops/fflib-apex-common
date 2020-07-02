@@ -27,11 +27,17 @@
 @IsTest
 private with sharing class fflib_SObjectUnitOfWorkTest
 {
+    @testSetup static void testData() 
+    {
+       TestUtilities.insertCustomSettings();
+    }
     // SObjects (in order of dependency) used by UnitOfWork in tests bellow
     private static List<Schema.SObjectType> MY_SOBJECTS =
         new Schema.SObjectType[] {
             Product2.SObjectType,
             PricebookEntry.SObjectType,
+            RecurSoft__Intacct_Entity__c.SObjectType,
+			Account.SObjectType,
             Opportunity.SObjectType,
             OpportunityLineItem.SObjectType };
 
@@ -48,11 +54,16 @@ private with sharing class fflib_SObjectUnitOfWorkTest
 
         uow.m_emailWork = new Mock_SendEmailWork();
 
+        RecurSoft__Intacct_Entity__c entity = new RecurSoft__Intacct_Entity__c(Name = 'SR001');
+        uow.registerNew(new List<SObject>{entity});
+        Account acct = new Account(Name = 'Test Acct', Industry = 'Dental', RecurSoft__Payment_Term__c = 'Due Upon Receipt');
+        uow.registerNew(acct, Account.RecurSoft__Intacct_Entity__c, entity);
+                
         Opportunity opp = new Opportunity();
         opp.Name = testRecordName;
         opp.StageName = 'Open';
         opp.CloseDate = System.today();
-        uow.registerNew( opp );
+        uow.registerNew( opp, Opportunity.AccountId, acct );
 
         uow.registerEmail( email );
 
@@ -76,15 +87,35 @@ private with sharing class fflib_SObjectUnitOfWorkTest
             fflib_SObjectUnitOfWork uow = new fflib_SObjectUnitOfWork(MY_SOBJECTS);
             for(Integer o=0; o<10; o++)
             {
+                RecurSoft__Intacct_Entity__c entity = new RecurSoft__Intacct_Entity__c(Name = 'SR001');
+				uow.registerNew(new List<SObject>{entity});
+				Account acct = new Account(Name = 'Test Acct', Industry = 'Dental', RecurSoft__Payment_Term__c = 'Due Upon Receipt');
+                uow.registerNew(acct, Account.RecurSoft__Intacct_Entity__c, entity);
+                
                 Opportunity opp = new Opportunity();
                 opp.Name = 'UoW Test Name ' + o;
                 opp.StageName = 'Open';
                 opp.CloseDate = System.today();
-                uow.registerNew(new List<SObject>{opp});
+                uow.registerNew(opp, Opportunity.AccountId, acct);
                 for(Integer i=0; i<o+1; i++)
                 {
                     Product2 product = new Product2();
                     product.Name = opp.Name + ' : Product : ' + i;
+                    product.ProductCode = '999' + o + i;
+					product.IsActive = true;
+					product.RecurSoft__Item_Type__c = 'Non-Inventory (Sales only)';
+					product.RecurSoft__Billing_Automation__c = 'Auto';
+					product.RecurSoft__Billing_Frequency__c = 'Monthly';
+					product.RecurSoft__Revenue_Schedule_Type__c = 'Repeat Amount for Each Installment';
+					product.RecurSoft__Product_Based_On__c = 'Each';
+					product.RecurSoft__Intacct_UOM_dropdown__c = 'Each';
+					product.RecurSoft__Invoicing_Date__c = 'Based on contract signed date';
+					product.RecurSoft__Taxable__c = true;
+					product.RecurSoft__Revenue_Recognition_Method__c = 'Revenue Transaction';
+					product.RecurSoft__Rev_Rec_Template_Name__c = 'Contract Term';
+					product.RecurSoft__Rev_Rec_End_Based_On__c = 'Contract Term End Date';
+					product.RecurSoft__Rev_Rec_Start__c = 0;
+					product.RecurSoft__Rev_Installments_Period__c = 'Monthly';
                     uow.registerNew(new List<SObject>{product});
                     PricebookEntry pbe = new PricebookEntry();
                     pbe.UnitPrice = 10;
@@ -120,6 +151,21 @@ private with sharing class fflib_SObjectUnitOfWorkTest
             uow.registerDirty(new List<SObject>{opp});
             Product2 product = new Product2();
             product.Name = opp.Name + ' : New Product';
+            product.IsActive = true;
+			product.ProductCode = '1234';
+			product.RecurSoft__Item_Type__c = 'Non-Inventory (Sales only)';
+			product.RecurSoft__Billing_Automation__c = 'Auto';
+			product.RecurSoft__Billing_Frequency__c = 'Monthly';
+			product.RecurSoft__Revenue_Schedule_Type__c = 'Repeat Amount for Each Installment';
+			product.RecurSoft__Product_Based_On__c = 'Each';
+			product.RecurSoft__Intacct_UOM_dropdown__c = 'Each';
+			product.RecurSoft__Invoicing_Date__c = 'Based on contract signed date';
+			product.RecurSoft__Taxable__c = true;
+			product.RecurSoft__Revenue_Recognition_Method__c = 'Revenue Transaction';
+			product.RecurSoft__Rev_Rec_Template_Name__c = 'Contract Term';
+			product.RecurSoft__Rev_Rec_End_Based_On__c = 'Contract Term End Date';
+			product.RecurSoft__Rev_Rec_Start__c = 0;
+			product.RecurSoft__Rev_Installments_Period__c = 'Monthly';
             uow.registerNew(new List<SObject>{product});
             PricebookEntry pbe = new PricebookEntry();
             pbe.UnitPrice = 10;
@@ -237,15 +283,34 @@ private with sharing class fflib_SObjectUnitOfWorkTest
         DerivedUnitOfWork uow = new DerivedUnitOfWork(MY_SOBJECTS);
         for(Integer o=0; o<10; o++)
         {
+            RecurSoft__Intacct_Entity__c entity = new RecurSoft__Intacct_Entity__c(Name = 'SR002');
+			uow.registerNew(new List<SObject>{entity});
+			Account acct = new Account(Name = 'Test Acct', Industry = 'Dental', RecurSoft__Payment_Term__c = 'Due Upon Receipt');
+			uow.registerNew(acct, Account.RecurSoft__Intacct_Entity__c, entity);
             Opportunity opp = new Opportunity();
             opp.Name = 'UoW Test Name ' + o;
             opp.StageName = 'Open';
             opp.CloseDate = System.today();
-            uow.registerNew(new List<SObject>{opp});
+            uow.registerNew(opp, Opportunity.AccountId, acct);
             for(Integer i=0; i<o+1; i++)
             {
                 Product2 product = new Product2();
                 product.Name = opp.Name + ' : Product : ' + i;
+                product.IsActive = true;
+				product.ProductCode = '888' + o + i;
+				product.RecurSoft__Item_Type__c = 'Non-Inventory (Sales only)';
+				product.RecurSoft__Billing_Automation__c = 'Auto';
+				product.RecurSoft__Billing_Frequency__c = 'Monthly';
+				product.RecurSoft__Revenue_Schedule_Type__c = 'Repeat Amount for Each Installment';
+				product.RecurSoft__Product_Based_On__c = 'Each';
+				product.RecurSoft__Intacct_UOM_dropdown__c = 'Each';
+				product.RecurSoft__Invoicing_Date__c = 'Based on contract signed date';
+				product.RecurSoft__Taxable__c = true;
+				product.RecurSoft__Revenue_Recognition_Method__c = 'Revenue Transaction';
+				product.RecurSoft__Rev_Rec_Template_Name__c = 'Contract Term';
+				product.RecurSoft__Rev_Rec_End_Based_On__c = 'Contract Term End Date';
+				product.RecurSoft__Rev_Rec_Start__c = 0;
+				product.RecurSoft__Rev_Installments_Period__c = 'Monthly';
                 uow.registerNew(new List<SObject>{product});
                 PricebookEntry pbe = new PricebookEntry();
                 pbe.UnitPrice = 10;
@@ -294,8 +359,12 @@ private with sharing class fflib_SObjectUnitOfWorkTest
     {
         // Insert Opporunities with UnitOfWork forcing a failure on DML by not setting 'Name' field
         DerivedUnitOfWork uow = new DerivedUnitOfWork(MY_SOBJECTS);
+        RecurSoft__Intacct_Entity__c entity = new RecurSoft__Intacct_Entity__c(Name = 'SR003');
+		uow.registerNew(new List<SObject>{entity});
+		Account acct = new Account(Name = 'Test Acct', Industry = 'Dental', RecurSoft__Payment_Term__c = 'Due Upon Receipt');
+		uow.registerNew(acct, Account.RecurSoft__Intacct_Entity__c, entity);
         Opportunity opp = new Opportunity();
-        uow.registerNew(new List<SObject>{opp});
+        uow.registerNew(opp, Opportunity.AccountId, acct);
         Boolean didFail = false;
         System.DmlException caughtEx = null;
 
@@ -336,11 +405,15 @@ private with sharing class fflib_SObjectUnitOfWorkTest
     {
         // Insert Opporunities with UnitOfWork
         DerivedUnitOfWork uow = new DerivedUnitOfWork(MY_SOBJECTS);
+        RecurSoft__Intacct_Entity__c entity = new RecurSoft__Intacct_Entity__c(Name = 'SR004');
+		uow.registerNew(new List<SObject>{entity});
+		Account acct = new Account(Name = 'Test Acct', Industry = 'Dental', RecurSoft__Payment_Term__c = 'Due Upon Receipt');
+		uow.registerNew(acct, Account.RecurSoft__Intacct_Entity__c, entity);
         Opportunity opp = new Opportunity();
         opp.Name = 'UoW Test Name 1';
         opp.StageName = 'Open';
         opp.CloseDate = System.today();
-        uow.registerNew(new List<SObject>{opp});
+        uow.registerNew(opp, Opportunity.AccountId, acct);
 
         // register work that will fail during processing
         FailDoingWork fdw = new FailDoingWork();
